@@ -1,17 +1,21 @@
+/* eslint-disable vue/multi-word-component-names */
+
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+<!--    <img alt="Vue logo" src="./assets/logo.png">-->
+<!--    <HelloWorld msg="Welcome to Your Vue.js App"/>-->
+    <Chat />
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+// import HelloWorld from './components/HelloWorld.vue'
+import Chat from './components/Chat.vue';
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    // HelloWorld
+    Chat
   }
 }
 </script>
