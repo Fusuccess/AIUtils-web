@@ -8,15 +8,16 @@
     <div v-if="loading">请求中...</div>
     <div v-if="response">
       <h2>AI回应：</h2>
-      <pre class="answer">{{ response }}</pre>
+      <div v-if="response" class="ai-response answer" v-html="renderMarkdown(response)"></div>
     </div>
     <div v-if="error" class="error">{{ error }}</div>
     <div v-if="history.length > 0">
       <h3>历史记录</h3>
       <ul class="answer">
         <li v-for="(item, index) in history" :key="index">
-          <p><strong>问题：</strong>{{ item.prompt }}</p>
-          <p><strong>回答：</strong>{{ item.answer }}</p>
+          <hr/>
+          <p><span>{{ item.prompt }}</span></p>
+          <p><span v-html="renderMarkdown(item.answer)"></span></p>
         </li>
       </ul>
     </div>
@@ -26,6 +27,7 @@
 
 <script>
 import axios from 'axios';
+import { marked } from 'marked';
 
 export default {
   data() {
@@ -46,6 +48,10 @@ export default {
       } else {
         this.error = '';
       }
+    },
+    // 渲染 Markdown
+    renderMarkdown(markdownText) {
+      return marked(markdownText);  // 使用新的 marked 导入方式
     },
     async sendRequest() {
       if (this.error || !this.userInput.trim()) {
