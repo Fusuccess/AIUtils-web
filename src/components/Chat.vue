@@ -81,7 +81,7 @@ export default {
             prompt: this.userInput,
             answer: this.response
           });
-          this.localStorageSave(`aiResponse_${this.userInput}`,this.response);
+          this.localStorageSave(`aiResponse_${this.userInput}`,this.response ,1800000);
         } else {
           this.error = 'AI没有返回有效结果';
         }
@@ -92,15 +92,30 @@ export default {
         this.loading = false;
       }
     },
-    localStorageSave(key,value){
-      localStorage.setItem(key, JSON.stringify(value));
+    localStorageSave(key,value, expiryTime = 3600000){
+      const data = {
+        value: value,
+        timestamp: Date.now(),  // 当前时间戳
+        expiry: expiryTime  // 设置缓存过期时间，单位毫秒，默认1小时
+      };
+      localStorage.setItem(key, JSON.stringify(data));
     },
     localStorageLoad(key){
       const cachedResponse = JSON.parse(localStorage.getItem(key));
-        if(cachedResponse === null){
-          return null;
-        }
-      return cachedResponse;
+      if (!cachedResponse) {
+        return null;  // 没有缓存数据
+      }
+
+      const currentTime = Date.now();
+      const cacheAge = currentTime - cachedResponse.timestamp;
+
+      // 如果缓存已经过期，返回 null
+      if (cacheAge > cachedResponse.expiry) {
+        localStorage.removeItem(key);  // 清除过期缓存
+        return null;  // 缓存过期，返回 null
+      }
+      // 缓存未过期，返回缓存的 value
+      return cachedResponse.value;
     }
   }
 };
