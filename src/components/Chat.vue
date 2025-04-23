@@ -2,6 +2,7 @@
   <div class="chat-container">
     <h1>AI代码注释与问题解答</h1>
     <textarea v-model="userInput" :maxlength=maxLength :placeholder="`请输入你的问题（最多${maxLength}字符）`"  @input="validateInput"></textarea>
+    <p>剩余字符数：{{ maxLength - userInput.length }}</p>
     <button @click="sendRequest" :disabled="loading">
       <span v-if="loading">加载中...</span>
       <span v-else>发送</span></button>
@@ -22,7 +23,6 @@
       </ul>
     </div>
   </div>
-
 </template>
 
 <script>
@@ -60,6 +60,17 @@ export default {
       }
       this.error = ''; // 清空错误信息
       this.loading = true;
+
+      let response = this.localStorageLoad(`aiResponse_${this.userInput}`);
+      if(response !== null){
+        this.response = response;
+        this.history.push({
+          prompt: this.userInput,
+          answer: this.response
+        });
+        this.loading = false;
+        return;
+      }
       try {
         const res = await axios.post('http://localhost:8080/ai', {
           prompt: this.userInput
@@ -70,6 +81,7 @@ export default {
             prompt: this.userInput,
             answer: this.response
           });
+          this.localStorageSave(`aiResponse_${this.userInput}`,this.response);
         } else {
           this.error = 'AI没有返回有效结果';
         }
@@ -79,6 +91,16 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    localStorageSave(key,value){
+      localStorage.setItem(key, JSON.stringify(value));
+    },
+    localStorageLoad(key){
+      const cachedResponse = JSON.parse(localStorage.getItem(key));
+        if(cachedResponse === null){
+          return null;
+        }
+      return cachedResponse;
     }
   }
 };
