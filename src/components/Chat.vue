@@ -27,7 +27,7 @@
 
 <script>
 import axios from 'axios';
-import { marked } from 'marked';
+import {marked} from 'marked';
 
 export default {
   data() {
@@ -58,7 +58,7 @@ export default {
         this.error = this.error || '请输入有效内容';
         return;
       }
-      this.error = ''; // 清空错误信息
+      this.error = '';
       this.loading = true;
 
       let response = this.localStorageLoad(`aiResponse_${this.userInput}`);
@@ -76,7 +76,7 @@ export default {
           prompt: this.userInput
         });
         if (res.data && res.data.status === 'success') {
-          this.response = res.data.data; // 直接获取data字段内容
+          this.response = res.data.data;
           this.history.push({
             prompt: this.userInput,
             answer: this.response
@@ -85,9 +85,17 @@ export default {
         } else {
           this.error = 'AI没有返回有效结果';
         }
-
       } catch (err) {
-        this.error = '请求失败，请重试！';
+        if (err.response) {
+          // 请求已发出，服务器返回了状态码
+          this.error = `请求错误: ${err.response.status}`;
+        } else if (err.request) {
+          // 请求已发出但没有收到响应
+          this.error = '网络错误，请检查网络连接';
+        } else {
+          // 其他错误
+          this.error = '请求失败，请重试！';
+        }
       } finally {
         this.loading = false;
       }
