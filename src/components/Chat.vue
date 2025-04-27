@@ -1,5 +1,6 @@
 <template>
   <div class="chat-container">
+    <div v-if="loginStatus" class="chat-box">
     <h1>AI代码注释与问题解答</h1>
     <textarea v-model="userInput" :maxlength=maxLength :placeholder="`请输入你的问题（最多${maxLength}字符）`"  @input="validateInput"></textarea>
     <p>剩余字符数：{{ maxLength - userInput.length }}</p>
@@ -22,11 +23,25 @@
         </li>
       </ul>
     </div>
+    </div>
+    <div v-else>
+      <h1>登陆</h1>
+
+      账号：<input placeholder="请输入账号" v-model="user.username">
+      <br>
+      密码：<input placeholder="请输入密码" type="password" v-model="user.password">
+      <br>
+      <div v-if="error" class="error">{{ error }}</div>
+
+      <button @click="loginRequest" :disabled="loading">
+        <span v-if="loading">登陆中...</span>
+        <span v-else>登陆</span></button>
+    </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
+import axios from '@/api/axios';
 import {marked} from 'marked';
 
 export default {
@@ -37,10 +52,34 @@ export default {
       error: '',
       loading: false,
       history: [],  // 用来保存历史记录
-      maxLength: 200  // 限制输入字符数
+      maxLength: 200,  // 限制输入字符数
+      loginStatus: false,  // 登录状态
+      user: {
+        username: '',
+        password: ''
+      }
     };
   },
   methods: {
+    async loginRequest() {
+      if (this.user.username === '' || this.user.password === '') {
+        this.error = '账号或密码不能为空';
+        return;
+      }
+      this.loading = true;
+      const res = await axios.post('http://localhost:8080/auth/login', {
+        username: this.user.username,
+        password: this.user.password
+      });
+      if (res.data && res.data.status ==='success') {
+        console.log(res.data.data)
+        localStorage.setItem('token', res.data.data);  // 将 token 保存在 localStorage
+        this.loginStatus = true;  // 登录成功，更新登录状态
+      }else {
+        this.error =  res.data.data;
+      }
+      this.loading = false;
+    },
     // 输入校验
     validateInput() {
       if (this.userInput.length > this.maxLength) {
@@ -72,7 +111,7 @@ export default {
         return;
       }
       try {
-        const res = await axios.post('http://localhost:8080/ai', {
+        const res =await axios.post('http://localhost:8080/ai', {
           prompt: this.userInput
         });
         if (res.data && res.data.status === 'success') {
@@ -83,7 +122,7 @@ export default {
           });
           this.localStorageSave(`aiResponse_${this.userInput}`,this.response ,1800000);
         } else {
-          this.error = 'AI没有返回有效结果';
+          this.error =  res.data.data;
         }
       } catch (err) {
         if (err.response) {
