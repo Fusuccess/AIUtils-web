@@ -1,6 +1,6 @@
 <template>
   <div class="chat-container">
-    <div class="userInfo" v-if="loginStatus=='logged'">👏欢迎 {{ userInfo.username }}</div>
+    <div class="userInfo" v-if="loginStatus=='logged'">👏欢迎 {{ userInfo.username }}  <a @click="clickLogout">[退出]</a></div>
     <div class="userInfo" v-else><select v-model="loginStatus" @change="changeHomeTab">
       <option value="login" >登陆</option>
       <option value="register" >注册</option>
@@ -98,6 +98,12 @@ export default {
     };
   },
   methods: {
+    clickLogout(){
+      localStorage.removeItem('token');
+      this.loginStatus = 'login';
+      this.userInfo.username = '';
+      this.error = '退出成功，请登录';
+    },
     async registerRequest() {
       if (this.user.username === '' || this.user.password === '' || this.user.confirmPassword === '') {
         this.error = '账号或密码不能为空';
