@@ -1,6 +1,6 @@
 <template>
   <div class="chat-container">
-    <div class="userInfo" v-if="loginStatus=='logged'">{{ userInfo.username }}</div>
+    <div class="userInfo" v-if="loginStatus=='logged'">👏欢迎 {{ userInfo.username }}</div>
     <div class="userInfo" v-else><select v-model="loginStatus" @change="changeHomeTab">
       <option value="login" >登陆</option>
       <option value="register" >注册</option>
@@ -142,6 +142,7 @@ export default {
         localStorage.setItem('token', res.data.data);  // 将 token 保存在 localStorage
         this.loginStatus = 'logged';  // 登录成功，更新登录状态
         this.userInfo.username = this.user.username;
+        this.error = '';
       } else {
         this.error = res.data.data;
       }
