@@ -1,7 +1,7 @@
 <template>
   <div class="chat-container">
     <div class="userInfo" v-if="loginStatus=='logged'">👏欢迎 {{ userInfo.username }}  <a @click="clickLogout">[退出]</a></div>
-    <div class="userInfo" v-else><select v-model="loginStatus" @change="changeHomeTab">
+    <div class="userInfo" v-else><select v-model="loginStatus" >
       <option value="login" >登陆</option>
       <option value="register" >注册</option>
       <option value="about">关于</option>
@@ -72,6 +72,7 @@
 <script>
 import axios from '@/api/axios';
 import {marked} from 'marked';
+import JSEncrypt from 'jsencrypt'
 
 export default {
   data() {
@@ -97,7 +98,19 @@ export default {
           " 💻 [Website](https://fusuccess.top)"
     };
   },
+  created() {
+    this.fetchPublicKey()
+  },
   methods: {
+    async fetchPublicKey() {
+      try {
+        const res = await axios.get('http://localhost:8080/rsa/publicKey')
+        const publicKey = res.data.data
+        this.localStorageSave('rsaPublicKey', publicKey);
+      } catch (e) {
+        console.error('获取公钥失败', e)
+      }
+    },
     clickLogout(){
       localStorage.removeItem('token');
       this.loginStatus = 'login';
@@ -120,7 +133,6 @@ export default {
         password: this.user.password
       });
       if (res.data && res.data.status === 'success') {
-        console.log(res.data.data)
         // localStorage.setItem('token', res.data.data);  // 将 token 保存在 localStorage
         this.loginStatus = 'login';  // 登录成功，更新登录状态
         // this.userInfo.username = this.user.username;
@@ -130,21 +142,29 @@ export default {
       }
       this.loading = false;
     },
-    changeHomeTab(){
-      console.log(this.home_tab)
-    },
     async loginRequest() {
       if (this.user.username === '' || this.user.password === '') {
         this.error = '账号或密码不能为空';
         return;
       }
+      let rsaPublicKey=  this.localStorageLoad('rsaPublicKey');
+      if (!rsaPublicKey) {
+        await this.fetchPublicKey();
+        rsaPublicKey =  this.localStorageLoad('rsaPublicKey');
+      }
+
+      const encryptor = new JSEncrypt()
+      encryptor.setPublicKey(rsaPublicKey)
+      const timestamp = Date.now() // 当前时间戳（毫秒）
+      const rawData = `${this.user.username}:::${this.user.password}:::${timestamp}`
+      const encryptedData = encryptor.encrypt(rawData)
+
       this.loading = true;
       const res = await axios.post('http://localhost:8080/auth/login', {
         username: this.user.username,
-        password: this.user.password
+        password: encryptedData
       });
       if (res.data && res.data.status === 'success') {
-        console.log(res.data.data)
         localStorage.setItem('token', res.data.data);  // 将 token 保存在 localStorage
         this.loginStatus = 'logged';  // 登录成功，更新登录状态
         this.userInfo.username = this.user.username;
